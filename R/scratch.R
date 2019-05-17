@@ -33,14 +33,48 @@ raw_df %>%
     group
 gender_df %>% 
     group_by(year, gender) %>% 
-    summarise(income = sum(as.double(weighted_TI), na.rm = TRUE)) %>% 
-    # mutate(income = scales::comma(income))
-    # ungroup() %>% 
+    summarise_at(vars(weighted_TI, FACT), sum, na.rm = TRUE) %>% 
+    mutate(income_pp = weighted_TI/FACT) %>% 
+    #summarise(income = sum(as.double(weighted_TI), na.rm = TRUE)) %>% 
     ggplot(aes(x = year, 
-               y = income, 
+               y = income_pp, 
                colour = gender)) + 
     geom_point() + 
     geom_smooth(method = "gam") + 
+    scale_colour_manual(values = c("black", "orange")) + 
+    theme_classic() + 
     NULL
-    # facet_wrap(~ gender)
 
+gender_df %>% 
+    group_by(year, gender) %>% 
+    summarise_at(vars(weighted_TI, FACT), median, na.rm = TRUE) %>% 
+    mutate(income_pp = weighted_TI/FACT) %>% 
+    #summarise(income = sum(as.double(weighted_TI), na.rm = TRUE)) %>% 
+    ggplot(aes(x = year, 
+               y = income_pp, 
+               colour = gender)) + 
+    geom_point() + 
+    geom_smooth(method = "gam") + 
+    scale_colour_manual(values = c("black", "orange")) + 
+    theme_classic() + 
+    NULL
+
+# generate the side by side median pay barplot
+gender_df %>% 
+    group_by(year, gender) %>% 
+    summarise_at(vars(weighted_TI, FACT), median, na.rm = TRUE) %>% 
+    mutate(income_pp = weighted_TI/FACT) %>% 
+    ggplot(aes(x = year, 
+               y = income_pp, 
+               fill = gender)) + 
+    geom_col(position = "dodge") + 
+    scale_fill_manual(values = c("black", "orange")) + 
+    theme_classic() + 
+    labs(x = "Year", y = "Median Income", fill = "Gender") + 
+    NULL
+
+gender_df %>% 
+    group_by(year, gender) %>% 
+    summarise_at(vars(weighted_TI, FACT), median, na.rm = TRUE) %>% 
+    mutate(income_pp = weighted_TI/FACT) %>% 
+    spread(key = vars(year, gender), value = income_pp)
