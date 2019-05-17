@@ -136,8 +136,9 @@ gender_df %>%
     theme(axis.text.x = element_text(angle = 45), 
           plot.title = element_text(hjust = 0.5))
 
+# the motherhood penalty
 gender_df %>% 
-    filter(AGERANGE %in% c("25-34", "35-44"))
+    filter(AGERANGE %in% c("25-34", "35-44")) %>% 
     mutate(income_pp = weighted_TI/FACT) %>% 
     group_by(year, gender, AGERANGE) %>% 
     summarise_at(vars(income_pp), median, na.rm = TRUE) %>% 
@@ -145,8 +146,9 @@ gender_df %>%
     geom_point() + 
     geom_line() + 
     theme_minimal() + 
+    scale_colour_manual(values = c("black", "orange")) + 
     scale_y_continuous(labels = scales::comma) + 
-    labs(title = "Median Income by Age Range", 
+    labs(title = "The Motherhood Penalty", 
          x = "Year", 
          y = "Median Income £") + 
     facet_wrap(~ gender) + 
