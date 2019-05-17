@@ -18,8 +18,9 @@ raw_df %>%
     group_by(year) %>% 
     summarise(has_good_ind = sum(good_ind, na.rm = TRUE)) %>% 
     ungroup()
+
+# create the gender tibble
 gender_df <- raw_df %>% 
-    #filter(str_detect(INDUSTRY07, pattern = "\\d{4}|[A-U]")) %>% 
     transmute(year = as.integer((substr(year, 1, 4))), 
               gender = if_else(SEX == 1L, 
                                "Male", 
@@ -39,8 +40,8 @@ gender_df <- raw_df %>%
         AGERANGE == 6L ~ "65-74", 
         TRUE           ~ "75+"
     )))
-raw_df %>% 
-    group
+
+
 gender_df %>% 
     group_by(year, gender) %>% 
     summarise_at(vars(weighted_TI, FACT), sum, na.rm = TRUE) %>% 
@@ -155,4 +156,73 @@ gender_df %>%
     theme(axis.text.x = element_text(angle = 45), 
           plot.title = element_text(hjust = 0.5))
     
-# c("A", "F", "Q", "K", "P")
+ind_grouped_df <- gender_df %>% 
+    filter(INDUSTRY07 %in% c("A", "F", "Q", "K", "P")) %>% 
+    mutate(INDUSTRY07 = factor(case_when(
+        INDUSTRY07 == "A" ~ "Agriculture", 
+        INDUSTRY07 == "F" ~ "Construction", 
+        INDUSTRY07 == "Q" ~ "Health & Social", 
+        INDUSTRY07 == "K" ~ "Finance", 
+        TRUE              ~ "Education"), 
+        levels = c("Agriculture", 
+                   "Construction", 
+                   "Education", 
+                   "Health & Social", 
+                   "Finance"), 
+        ordered = TRUE)) %>% 
+    mutate(income_pp = weighted_TI/FACT) %>% 
+    group_by(year, gender, INDUSTRY07, 
+             above_annual = factor(if_else(
+                 TI > 110000, 
+                 "Above Annual Allowance", 
+                 "Below Annual Allowance"))) %>% 
+    summarise_at(vars(income_pp), median, na.rm = TRUE)
+
+# side by side columns for all years
+ind_grouped_df %>% 
+    filter(year != 2012L) %>% 
+    ggplot(aes(INDUSTRY07, 
+               income_pp, 
+               fill = gender)) + 
+    geom_col(position = "dodge") + 
+    labs(x = "Industry", 
+         y = "Median Income £", 
+         title = "Pay Across Industries") + 
+    scale_fill_manual(values = c("black", "orange")) + 
+    scale_y_continuous(labels = scales::comma) + 
+    theme_classic() + 
+    # facet_wrap(~ year) + 
+    coord_flip()
+    
+# side by side columns facetted for years
+ind_grouped_df %>% 
+    filter(year != 2012L) %>% 
+    ggplot(aes(INDUSTRY07, 
+               income_pp, 
+               fill = gender)) + 
+    geom_col(position = "dodge") + 
+    labs(x = "Industry", 
+         y = "Median Income £", 
+         title = "Pay Across Industries") + 
+    scale_fill_manual(values = c("black", "orange")) + 
+    scale_y_continuous(labels = scales::comma) + 
+    theme_classic() + 
+    facet_wrap(~ year) + 
+    coord_flip()
+
+# industries facetted by annual allowance and year
+ind_grouped_df %>% 
+    filter(year != 2012L) %>% 
+    ggplot(aes(INDUSTRY07, 
+               income_pp, 
+               fill = gender)) + 
+    geom_col(position = "dodge") + 
+    labs(x = "Industry", 
+         y = "Median Income £", 
+         title = "Pay Across Industries") + 
+    scale_fill_manual(values = c("black", "orange")) + 
+    scale_y_continuous(labels = NULL, breaks = NULL) +
+    theme_classic() + 
+    facet_grid(above_annual ~ year) + 
+    coord_flip()
+    
