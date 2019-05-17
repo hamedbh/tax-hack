@@ -73,8 +73,31 @@ gender_df %>%
     labs(x = "Year", y = "Median Income", fill = "Gender") + 
     NULL
 
+grouped_gender_df <- gender_df %>% 
+    group_by(year, gender) %>% 
+    summarise_at(vars(weighted_TI, FACT), median, na.rm = TRUE) %>% 
+    mutate(income_pp = weighted_TI/FACT) %>% 
+    ungroup()
+
+gender_gap_df <- grouped_gender_df %>% 
+    filter(gender == "Male") %>% 
+    transmute(year, male_income_pp = income_pp) %>% 
+    inner_join(grouped_gender_df %>% 
+                   filter(gender == "Female") %>% 
+                   transmute(year, female_income_pp = income_pp), 
+               by = "year") %>% 
+    mutate(gender_gap = male_income_pp - female_income_pp)
+
+gender_gap_df %>% 
+    ggplot(aes(x = year, 
+               y = gender_gap)) + 
+    geom_point(colour = "darkgreen") + 
+    geom_smooth(method = "gam", colour = "red") + 
+    theme_classic() + 
+    NULL
 gender_df %>% 
     group_by(year, gender) %>% 
     summarise_at(vars(weighted_TI, FACT), median, na.rm = TRUE) %>% 
     mutate(income_pp = weighted_TI/FACT) %>% 
+    unite(col = "year_gender", year, gender)
     spread(key = vars(year, gender), value = income_pp)
