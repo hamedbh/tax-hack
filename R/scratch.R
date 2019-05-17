@@ -25,8 +25,12 @@ gender_df <- raw_df %>%
               weighted_TI = FACT * TI, 
               INDUSTRY07)
 gender_df %>% 
+    #sample_n(size = 1000, weight = FACT) %>% 
+    group_by(year) %>% 
+    mutate(income = sum(weighted_TI, na.rm = TRUE)) %>% 
+    ungroup() %>% 
     ggplot(aes(x = year, 
-               y = weighted_TI)) + 
+               y = income)) + 
     geom_point() + 
     geom_smooth(method = "gam")
 
