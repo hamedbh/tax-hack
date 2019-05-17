@@ -28,7 +28,17 @@ gender_df <- raw_df %>%
               FACT, 
               TI, 
               weighted_TI = FACT * TI, 
-              INDUSTRY07)
+              INDUSTRY07, 
+              AGERANGE) %>% 
+    mutate(AGERANGE = as.factor(case_when(
+        AGERANGE == 1L ~ "Under 25", 
+        AGERANGE == 2L ~ "25-34", 
+        AGERANGE == 3L ~ "35-44", 
+        AGERANGE == 4L ~ "45-54", 
+        AGERANGE == 5L ~ "55-64", 
+        AGERANGE == 6L ~ "65-74", 
+        TRUE           ~ "75+"
+    )))
 raw_df %>% 
     group
 gender_df %>% 
@@ -95,9 +105,52 @@ gender_gap_df %>%
     geom_smooth(method = "gam", colour = "red") + 
     theme_classic() + 
     NULL
+
 gender_df %>% 
-    group_by(year, gender) %>% 
-    summarise_at(vars(weighted_TI, FACT), median, na.rm = TRUE) %>% 
+    filter(gender == "Male") %>% 
     mutate(income_pp = weighted_TI/FACT) %>% 
-    unite(col = "year_gender", year, gender)
-    spread(key = vars(year, gender), value = income_pp)
+    group_by(year, AGERANGE) %>% 
+    summarise_at(vars(income_pp), median, na.rm = TRUE) %>% 
+    ggplot(aes(year, income_pp, colour = AGERANGE)) + 
+    geom_point() + 
+    geom_line() + 
+    theme_minimal() + 
+    scale_y_continuous(labels = scales::comma) + 
+    labs(title = "Male Median Income by Age Range", 
+         x = "Year", 
+         y = "Median Income £")
+# side by side code for gender with age ranges
+gender_df %>% 
+    mutate(income_pp = weighted_TI/FACT) %>% 
+    group_by(year, gender, AGERANGE) %>% 
+    summarise_at(vars(income_pp), median, na.rm = TRUE) %>% 
+    ggplot(aes(year, income_pp, colour = AGERANGE)) + 
+    geom_point() + 
+    geom_line() + 
+    theme_minimal() + 
+    scale_y_continuous(labels = scales::comma) + 
+    labs(title = "Median Income by Age Range", 
+         x = "Year", 
+         y = "Median Income £") + 
+    facet_wrap(~ gender) + 
+    theme(axis.text.x = element_text(angle = 45), 
+          plot.title = element_text(hjust = 0.5))
+
+gender_df %>% 
+    filter(AGERANGE %in% c("25-34", "35-44"))
+    mutate(income_pp = weighted_TI/FACT) %>% 
+    group_by(year, gender, AGERANGE) %>% 
+    summarise_at(vars(income_pp), median, na.rm = TRUE) %>% 
+    ggplot(aes(year, income_pp, colour = AGERANGE)) + 
+    geom_point() + 
+    geom_line() + 
+    theme_minimal() + 
+    scale_y_continuous(labels = scales::comma) + 
+    labs(title = "Median Income by Age Range", 
+         x = "Year", 
+         y = "Median Income £") + 
+    facet_wrap(~ gender) + 
+    theme(axis.text.x = element_text(angle = 45), 
+          plot.title = element_text(hjust = 0.5))
+    
+# c("A", "F", "Q", "K", "P")
